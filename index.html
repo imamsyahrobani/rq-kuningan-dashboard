@@ -15,7 +15,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for Grafik Statistik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <!-- Firebase (optional cloud) -->
+        <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+apiKey: "AIzaSyA_RTmW2-fCPv8bbLWBMnKw6l9Z8lYulLo",
+            authDomain: "rq-kuningan.firebaseapp.com",
+            projectId: "rq-kuningan",
+            storageBucket: "rq-kuningan.firebasestorage.app",
+            messagingSenderId: "582638911633",
+            appId: "1:582638911633:web:e1693f4b4084ef26f8bf30"
+    };
+
+    // Inisialisasi Firebase
+    if (firebaseConfig.apiKey) {
+        firebase.apps.length === 0 ? firebase.initializeApp(firebaseConfig) : firebase.app();
+        firebaseReady = true;
+        db = firebase.firestore();
+        auth = firebase.auth();
+        console.log('[Firebase] Initialized');
+    } else {
+        console.warn('[Firebase] Firebase config tidak lengkap - fitur cloud dinonaktifkan');
+    }
+
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
