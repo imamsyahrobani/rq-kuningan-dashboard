@@ -1227,6 +1227,8 @@
                 console.warn('Gagal menyimpan data', e);
                 if (typeof showToast === 'function') showToast('Gagal menyimpan data ke browser', false);
             }
+        }
+
         async function syncToCloud() {
             if (!firebaseReady || !db) return;
             const collections = [
@@ -1270,10 +1272,7 @@
             }
         }
 
-
-        }
-
-        // Muat data tersimpan (override default data di atas)
+// Muat data tersimpan (override default data di atas)
         financeData = loadData('financeData', financeData);
         sppData = loadData('sppData', sppData);
         incidentData = loadData('incidentData', incidentData);
@@ -1307,6 +1306,8 @@
 
             currentUser = { username: user.username, role: user.role, name: user.name, avatar: user.avatar };
             currentRole = user.role;
+
+            try { localStorage.setItem('rq_session', JSON.stringify(currentUser)); } catch (e) {}
 
             // Update UI berdasarkan Peran
             document.getElementById('userNameDisplay').innerText = user.name;
@@ -1345,6 +1346,7 @@
 
         function handleLogout() {
             currentUser = null;
+            try { localStorage.removeItem('rq_session'); } catch (e) {}
             document.getElementById('dashboardPage').classList.add('hidden');
             document.getElementById('loginPage').classList.remove('hidden');
             showToast('Anda telah keluar dari sistem', false);
@@ -1400,6 +1402,43 @@
         window.addEventListener('DOMContentLoaded', async () => {
             if (firebaseReady) {
                 await loadFromCloud();
+            }
+            // Restore session (coba localStorage dulu, lalu sessionStorage sebagai cadangan)
+            let raw = null;
+            try { raw = localStorage.getItem('rq_session'); } catch (e) { console.warn('[AUTH] localStorage read error', e); }
+            if (!raw) {
+                try { raw = sessionStorage.getItem('rq_session'); } catch (e) { console.warn('[AUTH] sessionStorage read error', e); }
+                if (raw) {
+                    try { localStorage.setItem('rq_session', raw); } catch (e) { console.warn('[AUTH] gagal migrate session ke localStorage', e); }
+                }
+            }
+            console.log('[AUTH] rq_session tersedia:', !!raw, '| origin:', window.location.origin);
+            if (raw) {
+                try {
+                    const u = JSON.parse(raw);
+                    if (u && u.username && u.role) {
+                        currentUser = u;
+                        currentRole = u.role;
+                        const nameEl = document.getElementById('userNameDisplay');
+                        if (nameEl) nameEl.innerText = u.name || u.username;
+                        const roleEl = document.getElementById('userRoleDisplay');
+                        if (roleEl) roleEl.innerText = u.role === 'pimpinan' ? 'Pimpinan RQ (Mudir)' : 'Administrator';
+                        const avatarEl = document.getElementById('userAvatar');
+                        if (avatarEl) avatarEl.innerText = u.avatar || (u.username || '').substring(0,3).toUpperCase();
+                        const welcomeEl = document.getElementById('welcomeText');
+                        if (welcomeEl) welcomeEl.innerText = "Assalamu'alaikum, " + (u.name || u.username);
+                        document.getElementById('loginPage').classList.add('hidden');
+                        document.getElementById('dashboardPage').classList.remove('hidden');
+                        applyRoleUI();
+                        console.log('[AUTH] session dipulihkan untuk', u.username, '(', u.role, ')');
+                    } else {
+                        console.warn('[AUTH] session tidak valid (kolom username/role hilang)', u);
+                    }
+                } catch (e) {
+                    console.warn('[AUTH] gagal parse session', e);
+                }
+            } else {
+                console.log('[AUTH] tidak ada session disimpan -> halaman login ditampilkan');
             }
             renderSpp();
             renderFinance();
